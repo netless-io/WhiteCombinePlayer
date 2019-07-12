@@ -1,0 +1,13 @@
+use_frameworks!
+
+platform :ios, '8.0'
+
+target 'WhiteCombinePlayer_Example' do
+  pod 'WhiteCombinePlayer', :path => '../'
+
+  target 'WhiteCombinePlayer_Tests' do
+    inherit! :search_paths
+
+    pod 'FBSnapshotTestCase'
+  end
+end
