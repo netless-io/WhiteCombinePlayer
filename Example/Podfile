@@ -1,13 +1,21 @@
-use_frameworks!
-
-platform :ios, '8.0'
+platform :ios, '9.0'
 
 target 'WhiteCombinePlayer_Example' do
   pod 'WhiteCombinePlayer', :path => '../'
-
+  pod 'Masonry'
   target 'WhiteCombinePlayer_Tests' do
     inherit! :search_paths
 
     pod 'FBSnapshotTestCase'
+  end
+end
+
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '9.0'
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+    end
   end
 end
