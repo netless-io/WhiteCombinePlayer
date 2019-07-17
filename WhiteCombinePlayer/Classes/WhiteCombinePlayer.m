@@ -14,12 +14,20 @@ typedef NS_ENUM(NSInteger, PauseReason) {
     PauseReasonRePlayerBuffering,
 };
 
+#ifdef DEBUG
+#define DLog(fmt, ...) NSLog((@"%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__);
+#else
+#define DLog(...)
+#endif
+
 @interface WhiteCombinePlayer ()
 @property (nonatomic, strong, readwrite) AVPlayer *videoPlayer;
 @property (nonatomic, strong, readwrite) WhitePlayer *replayer;
 
 @property (nonatomic, assign, getter=isRouteChangedWhilePlaying) BOOL routeChangedWhilePlaying;
 @property (nonatomic, assign, getter=isInterruptedWhilePlaying) BOOL interruptedWhilePlaying;
+
+@property (nonatomic, assign, getter=isReplayerBufferring) BOOL replayerBufferring;
 
 @property (nonatomic, assign) PauseReason pauseReson;
 
@@ -38,6 +46,7 @@ typedef NS_ENUM(NSInteger, PauseReason) {
     if (self = [super init]) {
         _videoPlayer = player;
         _replayer = replayer;
+        _replayerBufferring = YES;
     }
     [self setup];
     return self;
@@ -81,6 +90,11 @@ typedef NS_ENUM(NSInteger, PauseReason) {
         return YES;
     }
     return NO;
+}
+
+- (BOOL)hasEnoughBuffer
+{
+    return self.videoPlayer.currentItem.isPlaybackLikelyToKeepUp;
 }
 
 #pragma mark - Notification
@@ -224,11 +238,11 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
     if ([self.delegate respondsToSelector:@selector(combinePlayerStartBuffering)]) {
         [self.delegate combinePlayerStartBuffering];
     }
-    if (self.pauseReson == PauseReasonRePlayerBuffering) {
-        //TODO:两边都在缓冲
-    } else if ([self videoDesireToPlay]) {
-        [self pauseReplayer];
-    }
+    DLog(@"");
+    
+    // 直接暂停 replayer 播放
+    // replayer 加载 bufferring 的行为，一旦开始，不会停止。
+    [self pauseReplayer];
 }
 
 - (void)endBuffering
@@ -236,14 +250,24 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
     if ([self.delegate respondsToSelector:@selector(combinePlayerEndBuffering)]) {
         [self.delegate combinePlayerEndBuffering];
     }
-    if (self.pauseReson == PauseReasonRePlayerBuffering) {
-        //FIXME:video 缓冲结束
-    } else if ([self videoDesireToPlay]) {
+    
+/*
+ 1. replayer 未缓存完成；暂停 video 播放(初始化后，先执行 replayer 的 seek 后，该情况发生概率不大)
+ 2. replayer 缓存完成，之前 video 已经暂停；整体播放
+ 3. 其他情况，直接播放 replayer
+ */
+    
+    if (self.isReplayerBufferring) {
+        DLog(@"isReplayerBufferring");
+        [self pauseForReplayerBuffing];
+    } else if (self.pauseReson == PauseReasonRePlayerBuffering) {
+        DLog(@"PauseReasonRePlayerBuffering");
+        [self play];
+    } else {
+        DLog(@"playReplayer");
         [self playReplayer];
     }
 }
-
-#pragma mark -
 
 #pragma mark - Play Control
 
@@ -265,8 +289,9 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
     self.interruptedWhilePlaying = NO;
     self.routeChangedWhilePlaying = NO;
     
-    // 已经有缓冲进度，则直接播放
+    // video 将直接播放，replayer 也直接播放
     if (self.videoPlayer.currentItem.isPlaybackLikelyToKeepUp) {
+        DLog(@"play directly");
         [self.replayer play];
     }
 }
@@ -280,24 +305,40 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
 
 - (void)updateReplayerPhase:(WhitePlayerPhase)phase
 {
+    // replay 处于缓冲状态
     if (phase == WhitePlayerPhaseBuffering || phase == WhitePlayerPhaseWaitingFirstFrame) {
+        self.replayerBufferring = YES;
         [self pauseForReplayerBuffing];
-    } else if (phase == WhitePlayerPhasePlaying) {
+    // 进入播放状态，或者暂停状态，player 都已经缓存完
+    } else if (phase == WhitePlayerPhasePlaying || phase == WhitePlayerPhasePause) {
+        self.replayerBufferring = NO;
         [self replayerReadyToPlay];
     }
 }
 
 - (void)pauseForReplayerBuffing
 {
+    DLog(@"pauseForReplayerBuffing");
     self.pauseReson = PauseReasonRePlayerBuffering;
     [self.videoPlayer pause];
 }
 
 - (void)replayerReadyToPlay
 {
-    if (self.pauseReson == PauseReasonRePlayerBuffering) {
-        self.pauseReson = PauseReasonNone;
+
+    /*
+     1. video 缓冲完毕，之前因为 replayer 在缓冲，暂停 video（rate 为 0）；需要恢复 video 播放
+     2. video 实际在播放；不做任何事情
+     3. 其他情况，暂停 replayer，等待 video 可以播放
+     */
+    if (self.pauseReson == PauseReasonRePlayerBuffering && [self hasEnoughBuffer]) {
         [self.videoPlayer play];
+    } else if ([self videoDesireToPlay] && [self hasEnoughBuffer]) {
+        DLog(@"continue play and do nothing");
+    } else {
+        // video 处于缓冲中，暂停播放 replayer
+        DLog(@"wait for video");
+        [self pauseReplayer];
     }
 }
 
@@ -305,10 +346,11 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
 {
     NSTimeInterval seekTime = CMTimeGetSeconds(time);
     [self.replayer seekToScheduleTime:seekTime];
-    
+    DLog(@"seekTime: %f", seekTime);
     __weak typeof(self)weakSelf = self;
     [self.videoPlayer seekToTime:time completionHandler:^(BOOL finished) {
         NSTimeInterval realTime = CMTimeGetSeconds(weakSelf.videoPlayer.currentItem.currentTime);
+        DLog(@"realTime: %f", realTime);
         // AVPlayer 的 seek 不完全准确, seek 完以后，根据真实时间，重新 seek
         [weakSelf.replayer seekToScheduleTime:realTime];
         if (finished) {

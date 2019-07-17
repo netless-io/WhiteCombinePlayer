@@ -39,6 +39,8 @@ static NSString *const kRoomToken = @"WHITEcGFydG5lcl9pZD1OZ3pwQWNBdlhiemJERW9NY
         if (player) {
             self.combinePlayer = [[WhiteCombinePlayer alloc] initWithVideoUrl:[NSURL URLWithString:kM3u8] replayer:player];
             [self.videoView setAVPlayer:self.combinePlayer.videoPlayer];
+            // 提前 seek，replayer 会提前读取缓存，可以减少 play 时，bufferring 等待时间
+            [player seekToScheduleTime:0];
         }
     }];
 }
