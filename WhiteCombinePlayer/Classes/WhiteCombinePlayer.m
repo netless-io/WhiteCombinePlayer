@@ -303,9 +303,14 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
 
 - (void)seekToTime:(CMTime)time completionHandler:(void (^)(BOOL finished))completionHandler
 {
-    NSTimeInterval interval = CMTimeGetSeconds(time);
+    NSTimeInterval seekTime = CMTimeGetSeconds(time);
+    [self.replayer seekToScheduleTime:seekTime];
+    
+    __weak typeof(self)weakSelf = self;
     [self.videoPlayer seekToTime:time completionHandler:^(BOOL finished) {
-        [self.replayer seekToScheduleTime:interval];
+        NSTimeInterval realTime = CMTimeGetSeconds(weakSelf.videoPlayer.currentItem.currentTime);
+        // AVPlayer 的 seek 不完全准确, seek 完以后，根据真实时间，重新 seek
+        [weakSelf.replayer seekToScheduleTime:realTime];
         if (finished) {
             completionHandler(finished);
         }
