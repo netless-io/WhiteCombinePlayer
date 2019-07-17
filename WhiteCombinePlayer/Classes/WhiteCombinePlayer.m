@@ -52,8 +52,8 @@ typedef NS_ENUM(NSInteger, PauseReason) {
 - (void)setup
 {
     [self registerAudioSessionNotification];
-    [self.videoPlayer addObserver:self forKeyPath:@"rate" options:0 context:nil];
-    [self addObserverWithPlayItem:self.videoPlayer.currentItem];
+    [self.videoPlayer addObserver:self forKeyPath:kRateKey options:0 context:nil];
+    [self.videoPlayer addObserver:self forKeyPath:@"currentItem" options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
 }
 
 #pragma mark - Private
@@ -144,8 +144,9 @@ typedef NS_ENUM(NSInteger, PauseReason) {
 }
 
 #pragma mark - KVO
-static NSString * const kRate = @"rate";
-static NSString * const kStatus = @"status";
+static NSString * const kRateKey = @"rate";
+static NSString * const kCurrentItemKey = @"currentItem";
+static NSString * const kStatusKey = @"status";
 static NSString * const kPlaybackBufferEmptyKey = @"playbackBufferEmpty";
 static NSString * const kPlaybackLikelyToKeepUpKey = @"playbackLikelyToKeepUp";
 static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
@@ -157,17 +158,30 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
         return;
     }
     
-    if ([keyPath isEqualToString:kRate]) {
-        if ([self.delegate respondsToSelector:@selector(combinePlayerPlayStateChange:)]) {
-            [self.delegate combinePlayerPlayStateChange:[self videoDesireToPlay]];
-        }
-    }
-
-    if (object == self.videoPlayer && [keyPath isEqualToString:kStatus]) {
+    if (object == self.videoPlayer && [keyPath isEqualToString:kStatusKey]) {
         if (self.videoPlayer.status == AVPlayerStatusFailed && [self.delegate respondsToSelector:@selector(combinePlayerError:)]) {
             [self.delegate combinePlayerError:self.videoPlayer.error];
         }
-    } else if ([keyPath isEqualToString:kStatus]) {
+    } else if (object == self.videoPlayer && [keyPath isEqualToString:kCurrentItemKey]) {
+        // 防止主动替换 CurrentItem，理论上单个Video 不会进行替换
+        AVPlayerItem *newPlayerItem = [change objectForKey:NSKeyValueChangeNewKey];
+        AVPlayerItem *lastPlayerItem = [change objectForKey:NSKeyValueChangeOldKey];
+        if (lastPlayerItem != (id)[NSNull null]) {
+            @try {
+                [self removeObserverWithPlayItem:lastPlayerItem];
+            } @catch(id anException) {
+                //do nothing, obviously it wasn't attached because an exception was thrown
+            }
+        }
+        if (newPlayerItem != (id)[NSNull null]) {
+            [self addObserverWithPlayItem:newPlayerItem];
+        }
+
+    } else if ([keyPath isEqualToString:kRateKey]) {
+        if ([self.delegate respondsToSelector:@selector(combinePlayerPlayStateChange:)]) {
+            [self.delegate combinePlayerPlayStateChange:[self videoDesireToPlay]];
+        }
+    } else if ([keyPath isEqualToString:kStatusKey]) {
         if (self.videoPlayer.currentItem.status == AVPlayerItemStatusFailed && [self.delegate respondsToSelector:@selector(combinePlayerError:)]) {
             [self.delegate combinePlayerError:self.videoPlayer.currentItem.error];
         }
@@ -187,9 +201,10 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
     }
 }
 
+// 推荐使用 KVOController 做 KVO 监听
 - (void)addObserverWithPlayItem:(AVPlayerItem *)item
 {
-    [item addObserver:self forKeyPath:kStatus options:NSKeyValueObservingOptionNew context:nil];
+    [item addObserver:self forKeyPath:kStatusKey options:NSKeyValueObservingOptionNew context:nil];
     [item addObserver:self forKeyPath:kLoadedTimeRangesKey options:NSKeyValueObservingOptionNew context:nil];
     [item addObserver:self forKeyPath:kPlaybackBufferEmptyKey options:NSKeyValueObservingOptionNew context:nil];
     [item addObserver:self forKeyPath:kPlaybackLikelyToKeepUpKey options:NSKeyValueObservingOptionNew context:nil];
@@ -197,7 +212,7 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
 
 - (void)removeObserverWithPlayItem:(AVPlayerItem *)item
 {
-    [item removeObserver:self forKeyPath:kStatus];
+    [item removeObserver:self forKeyPath:kStatusKey];
     [item removeObserver:self forKeyPath:kLoadedTimeRangesKey];
     [item removeObserver:self forKeyPath:kPlaybackBufferEmptyKey];
     [item removeObserver:self forKeyPath:kPlaybackLikelyToKeepUpKey];
