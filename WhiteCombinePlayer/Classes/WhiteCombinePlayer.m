@@ -266,7 +266,7 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
     self.routeChangedWhilePlaying = NO;
     
     // 已经有缓冲进度，则直接播放
-    if ([self isLoaded:self.videoPlayer.currentItem.loadedTimeRanges]) {
+    if (self.videoPlayer.currentItem.isPlaybackLikelyToKeepUp) {
         [self.replayer play];
     }
 }
@@ -280,7 +280,7 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
 
 - (void)updateReplayerPhase:(WhitePlayerPhase)phase
 {
-    if (phase == WhitePlayerPhaseBuffering) {
+    if (phase == WhitePlayerPhaseBuffering || phase == WhitePlayerPhaseWaitingFirstFrame) {
         [self pauseForReplayerBuffing];
     } else if (phase == WhitePlayerPhasePlaying) {
         [self replayerReadyToPlay];
