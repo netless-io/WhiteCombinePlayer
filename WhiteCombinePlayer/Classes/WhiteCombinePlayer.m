@@ -9,9 +9,9 @@
 #import <AVFoundation/AVFoundation.h>
 
 typedef NS_ENUM(NSInteger, PauseReason) {
-    PauseReasonNone,
-    PauseReasonVideoPause,
-    PauseReasonRePlayerBuffering,
+    PauseReasonNone,                //普通播放状态 rate = 1
+    PauseReasonVideoPause,          //普通暂停状态 rate = 0
+    PauseReasonRePlayerBuffering,   //等待 replayer 缓存，video 处于暂停状态 rate = 0
 };
 
 #ifdef DEBUG
@@ -46,6 +46,7 @@ typedef NS_ENUM(NSInteger, PauseReason) {
     if (self = [super init]) {
         _videoPlayer = player;
         _replayer = replayer;
+        _pauseReson = PauseReasonVideoPause;
         _replayerBufferring = YES;
     }
     [self setup];
@@ -257,13 +258,13 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
  3. 其他情况，直接播放 replayer
  */
     
-    if (self.isReplayerBufferring) {
+    if (self.isReplayerBufferring && [self videoDesireToPlay]) {
         DLog(@"isReplayerBufferring");
         [self pauseForReplayerBuffing];
     } else if (self.pauseReson == PauseReasonRePlayerBuffering) {
         DLog(@"PauseReasonRePlayerBuffering");
         [self play];
-    } else {
+    } else if ([self videoDesireToPlay]) {
         DLog(@"playReplayer");
         [self playReplayer];
     }
@@ -309,8 +310,9 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
     if (phase == WhitePlayerPhaseBuffering || phase == WhitePlayerPhaseWaitingFirstFrame) {
         self.replayerBufferring = YES;
         [self pauseForReplayerBuffing];
+    }
     // 进入播放状态，或者暂停状态，player 都已经缓存完
-    } else if (phase == WhitePlayerPhasePlaying || phase == WhitePlayerPhasePause) {
+    else if (phase == WhitePlayerPhasePlaying || phase == WhitePlayerPhasePause) {
         self.replayerBufferring = NO;
         [self replayerReadyToPlay];
     }
@@ -318,14 +320,20 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
 
 - (void)pauseForReplayerBuffing
 {
-    DLog(@"pauseForReplayerBuffing");
-    self.pauseReson = PauseReasonRePlayerBuffering;
-    [self.videoPlayer pause];
+    //只有正在播放时，才要处理
+    if ([self videoDesireToPlay]) {
+        DLog(@"pauseForReplayerBuffing");
+        self.pauseReson = PauseReasonRePlayerBuffering;
+        [self.videoPlayer pause];
+    }
 }
 
 - (void)replayerReadyToPlay
 {
-
+    // 暂停，则不处理
+    if (self.pauseReson == PauseReasonVideoPause) {
+        return;
+    }
     /*
      1. video 缓冲完毕，之前因为 replayer 在缓冲，暂停 video（rate 为 0）；需要恢复 video 播放
      2. video 实际在播放；不做任何事情
