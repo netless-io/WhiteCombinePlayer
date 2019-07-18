@@ -311,8 +311,12 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
         self.replayerBufferring = YES;
         [self pauseForReplayerBuffing];
     }
-    // 进入播放状态，或者暂停状态，player 都已经缓存完
-    else if (phase == WhitePlayerPhasePlaying || phase == WhitePlayerPhasePause) {
+    // 进入暂停状态，player 都已经缓存完
+    else if (phase == WhitePlayerPhasePause) {
+        self.replayerBufferring = NO;
+    }
+    // 播放状态，根据 videoPlayer 处理
+    else if (phase == WhitePlayerPhasePlaying) {
         self.replayerBufferring = NO;
         [self replayerReadyToPlay];
     }
@@ -330,10 +334,6 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
 
 - (void)replayerReadyToPlay
 {
-    // 暂停，则不处理
-    if (self.pauseReson == PauseReasonVideoPause) {
-        return;
-    }
     /*
      1. video 缓冲完毕，之前因为 replayer 在缓冲，暂停 video（rate 为 0）；需要恢复 video 播放
      2. video 实际在播放；不做任何事情
