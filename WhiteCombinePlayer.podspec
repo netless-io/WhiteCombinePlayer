@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
   s.homepage         = 'https://github.com/netless-io/WhiteCombinePlayer'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'leavesster' => '11785335+leavesster@users.noreply.github.com' }
-  s.source           = { :git => 'https://github.com/leavesster/WhiteCombinePlayer.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/netless-io/WhiteCombinePlayer.git', :tag => s.version.to_s }
   s.ios.deployment_target = '9.0'
 
   s.source_files = 'WhiteCombinePlayer/Classes/**/*'
