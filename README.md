@@ -20,9 +20,57 @@ it, simply add the following line to your Podfile:
 pod 'WhiteCombinePlayer'
 ```
 
-## Author
+## how to use
 
-leavesster, 11785335+leavesster@users.noreply.github.com
+```Objective-C
+WhiteCombinePlayer *combinePlayer = [[WhiteCombinePlayer alloc] initWithVideoUrl:[NSURL URLWithString:kM3u8] replayer:player];
+combinePlayer.delegate = (id<WhiteCombineDelegate>)self;
+```
+
+```Objective-C
+// WhiteCombineDelegate 回调
+/**
+进入缓冲状态
+*/
+- (void)combinePlayerStartBuffering;
+
+/**
+结束缓冲状态，开始播放
+*/
+- (void)combinePlayerEndBuffering;
+
+/**
+视频播放结束
+*/
+- (void)videoPlayerDidFinish;
+
+/**
+播放状态变化，由播放变停止，或者由暂停变播放
+
+@param isPlaying 是否正在播放
+*/
+- (void)combinePlayerPlayStateChange:(BOOL)isPlaying;
+
+
+/**
+videoPlayer 无法进行播放，需要重新创建 CombinePlayer 进行播放
+
+@param error 错误原因
+*/
+- (void)combinePlayerError:(NSError *)error;
+
+/**
+缓冲进度更新
+
+@param loadedTimeRanges 数组内元素为 CMTimeRange，使用 CMTimeRangeValue 获取 CMTimeRange，是 video 已经加载了的缓存
+*/
+- (void)loadedTimeRangeChange:(NSArray<NSValue *> *)loadedTimeRanges;
+@end
+```
+
+## implement
+
+[实现逻辑](./implement.md)
 
 ## License
 
