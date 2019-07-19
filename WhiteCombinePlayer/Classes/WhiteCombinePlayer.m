@@ -253,15 +253,11 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
     }
     
 /*
- 1. replayer 未缓存完成；暂停 video 播放(初始化后，先执行 replayer 的 seek 后，该情况发生概率不大)
- 2. replayer 缓存完成，之前 video 已经暂停；整体播放
- 3. 其他情况，直接播放 replayer
+ 1. replayer 缓存完成，之前 video 已经暂停；整体播放
+ 2. avplayer 处于播放状态，直接播放 replayer
  */
     
-    if (self.isReplayerBufferring && [self videoDesireToPlay]) {
-        DLog(@"isReplayerBufferring");
-        [self pauseForReplayerBuffing];
-    } else if (self.pauseReson == PauseReasonRePlayerBuffering) {
+    if (self.pauseReson == PauseReasonRePlayerBuffering) {
         DLog(@"PauseReasonRePlayerBuffering");
         [self play];
     } else if ([self videoDesireToPlay]) {
