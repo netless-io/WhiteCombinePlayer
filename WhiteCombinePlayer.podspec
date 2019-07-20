@@ -26,7 +26,7 @@ Pod::Spec.new do |s|
   # s.resource_bundles = {
   #   'WhiteCombinePlayer' => ['WhiteCombinePlayer/Assets/*.png']
   # }
-
+  s.static_framework = true
   # s.public_header_files = 'Pod/Classes/**/*.h'
   s.frameworks = 'UIKit', 'AVFoundation'
   s.dependency 'White-SDK-iOS', '~> 2.1.0'
