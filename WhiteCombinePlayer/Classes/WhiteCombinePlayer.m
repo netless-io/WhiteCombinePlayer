@@ -191,8 +191,11 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
     }
     
     if (object == self.videoPlayer && [keyPath isEqualToString:kStatusKey]) {
-        if (self.videoPlayer.status == AVPlayerStatusFailed && [self.delegate respondsToSelector:@selector(combinePlayerError:)]) {
-            [self.delegate combinePlayerError:self.videoPlayer.error];
+        if (self.videoPlayer.status == AVPlayerStatusFailed) {
+            [self pause];
+            if ([self.delegate respondsToSelector:@selector(combinePlayerError:)]) {
+                [self.delegate combinePlayerError:self.videoPlayer.error];
+            }
         }
     } else if (object == self.videoPlayer && [keyPath isEqualToString:kCurrentItemKey]) {
         // 防止主动替换 CurrentItem，理论上单个Video 不会进行替换
@@ -214,8 +217,11 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
             [self.delegate combinePlayerPlayStateChange:[self videoDesireToPlay]];
         }
     } else if ([keyPath isEqualToString:kStatusKey]) {
-        if (self.videoPlayer.currentItem.status == AVPlayerItemStatusFailed && [self.delegate respondsToSelector:@selector(combinePlayerError:)]) {
-            [self.delegate combinePlayerError:self.videoPlayer.currentItem.error];
+        if (self.videoPlayer.currentItem.status == AVPlayerItemStatusFailed) {
+            [self pause];
+            if ([self.delegate respondsToSelector:@selector(combinePlayerError:)]) {
+                [self.delegate combinePlayerError:self.videoPlayer.currentItem.error];
+            }
         }
     } else if ([keyPath isEqualToString:kPlaybackBufferEmptyKey]) {
         if (self.videoPlayer.currentItem.isPlaybackBufferEmpty) {
