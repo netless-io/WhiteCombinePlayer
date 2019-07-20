@@ -6,7 +6,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <WhiteSDK.h>
+#import <White-SDK-iOS/WhiteSDK.h>
 #import <AVFoundation/AVFoundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
