@@ -98,6 +98,23 @@ typedef NS_ENUM(NSInteger, PauseReason) {
     return self.videoPlayer.currentItem.isPlaybackLikelyToKeepUp;
 }
 
+- (CMTime)itemDuration
+{
+    NSError *err = nil;
+    if ([self.videoPlayer.currentItem.asset statusOfValueForKey:@"duration" error:&err] == AVKeyValueStatusLoaded) {
+        AVPlayerItem *playerItem = [self.videoPlayer currentItem];
+        NSArray *loadedRanges = playerItem.seekableTimeRanges;
+        if (loadedRanges.count > 0) {
+            CMTimeRange range = [[loadedRanges firstObject] CMTimeRangeValue];
+            return (range.duration);
+        } else {
+            return (kCMTimeInvalid);
+        }
+    } else {
+        return (kCMTimeInvalid);
+    }
+}
+
 #pragma mark - Notification
 
 - (void)registerAudioSessionNotification
@@ -279,6 +296,17 @@ static NSString * const kLoadedTimeRangesKey = @"loadedTimeRanges";
 }
 
 #pragma mark - Public Methods
+- (NSTimeInterval)videoDuration;
+{
+    CMTime itemDurationTime = [self itemDuration];
+    NSTimeInterval duration = CMTimeGetSeconds(itemDurationTime);
+    if (CMTIME_IS_INVALID(itemDurationTime) || !isfinite(duration)) {
+        return 0.0f;
+    } else {
+        return duration;
+    }
+}
+
 - (void)play
 {
     self.pauseReson = PauseReasonNone;

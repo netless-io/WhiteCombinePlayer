@@ -69,6 +69,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithVideoPlayer:(AVPlayer *)player replayer:(WhitePlayer *)replayer;
 - (instancetype)initWithVideoUrl:(NSURL *)videoUrl replayer:(WhitePlayer *)replayer;
 
+- (NSTimeInterval)videoDuration;
+
 - (void)play;
 - (void)pause;
 - (void)updateReplayerPhase:(WhitePlayerPhase)phase;
