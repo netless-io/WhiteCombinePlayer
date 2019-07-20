@@ -35,7 +35,7 @@ SPEC CHECKSUMS:
   FBSnapshotTestCase: 094f9f314decbabe373b87cc339bea235a63e07a
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
   White-SDK-iOS: cd01dd82339eedd79f011931080dcef255c1247c
-  WhiteCombinePlayer: 55a469e7a6116167a3d0006a4301e13269feba90
+  WhiteCombinePlayer: edbeca583caf6c12c086e0a291bac78bde61c4ea
   YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
 
 PODFILE CHECKSUM: 9821c71b22a905b957fa50112ebb6f2de8edf042
