@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'WhiteCombinePlayer'
-  s.version          = '0.1.0'
+  s.version          = '0.1.4'
   s.summary          = 'let WhiteSDK\'s WhitePlayer and AVPlayer play and stop together'
 
   s.description      = <<-DESC
