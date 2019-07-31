@@ -86,13 +86,13 @@
     [self addGestureRecognizer:sliderGesture];
 }
 
-- (void)setBufferValue:(NSTimeInterval)bufferValue
+- (void)setBufferValue:(CGFloat)bufferValue
 {
     _bufferValue = bufferValue;
     [self updateBufferView];
 }
 
-- (void)setValue:(NSTimeInterval)value
+- (void)setValue:(CGFloat)value
 {
     _value = value;
     [self updateProgressView];
