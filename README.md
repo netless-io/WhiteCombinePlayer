@@ -5,6 +5,8 @@
 [![License](https://img.shields.io/cocoapods/l/WhiteCombinePlayer.svg?style=flat)](https://cocoapods.org/pods/WhiteCombinePlayer)
 [![Platform](https://img.shields.io/cocoapods/p/WhiteCombinePlayer.svg?style=flat)](https://cocoapods.org/pods/WhiteCombinePlayer)
 
+**该库功能已经默认集成在[whiteboard开源SDK](https://github.com/netless-io/Whiteboard-iOS) 中，当前库不再维护。**
+
 ## Example
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
